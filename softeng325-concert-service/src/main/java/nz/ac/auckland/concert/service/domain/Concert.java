@@ -1,6 +1,8 @@
 package nz.ac.auckland.concert.service.domain;
 
 import nz.ac.auckland.concert.common.types.PriceBand;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -72,5 +74,31 @@ public class Concert {
 
     public void set_performers(Set<Performer> _performers) {
         this._performers = _performers;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Concert))
+            return false;
+        if (obj == this)
+            return true;
+
+        Concert rhs = (Concert) obj;
+        return new EqualsBuilder().
+                append(_title, rhs._title).
+                append(_dates, rhs._dates).
+                append(_tariff, rhs._tariff).
+                append(_performers, rhs._performers).
+                isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder(17, 31).
+                append(_title).
+                append(_dates).
+                append(_tariff).
+                append(_performers).
+                hashCode();
     }
 }
