@@ -2,14 +2,21 @@ package nz.ac.auckland.concert.service.domain;
 
 import nz.ac.auckland.concert.common.types.PriceBand;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 
+@Entity
 public class Concert {
 
+    @Id
+    @GeneratedValue
     private Long _id;
+
     private String _title;
     private Set<LocalDateTime> _dates;
     private Map<PriceBand, BigDecimal> _tariff;
