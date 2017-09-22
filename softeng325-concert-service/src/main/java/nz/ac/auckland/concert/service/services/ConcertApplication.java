@@ -1,6 +1,8 @@
 package nz.ac.auckland.concert.service.services;
 
 import javax.ws.rs.core.Application;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * JAX-RS Application subclass for the Concert Web service.
@@ -17,4 +19,22 @@ public class ConcertApplication extends Application {
 	//
 	// This property is used by class ConcertServiceTest.
 	public static final int RESERVATION_EXPIRY_TIME_IN_SECONDS = 5;
+
+	private Set<Object> _singletons = new HashSet<Object>();
+	private Set<Class<?>> _classes = new HashSet<Class<?>>();
+
+	public ConcertApplication() {
+		_singletons.add(new PersistenceManager());
+		_classes.add(ConcertResource.class);
+	}
+
+	@Override
+	public Set<Object> getSingletons() {
+		return _singletons;
+	}
+
+	@Override
+	public Set<Class<?>> getClasses() {
+		return _classes;
+	}
 }
