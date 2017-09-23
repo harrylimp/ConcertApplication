@@ -1,25 +1,32 @@
 package nz.ac.auckland.concert.service.domain;
 
-import nz.ac.auckland.concert.common.dto.PerformerDTO;
 import nz.ac.auckland.concert.common.types.Genre;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.Set;
 
 @Entity
+@Table(name="PERFORMERS")
 public class Performer {
 
     @Id
     @GeneratedValue
+    @Column(nullable=false, name="PERFORMER_ID")
     private Long _id;
 
+    @Column(name="GENRE")
+    @Enumerated(EnumType.STRING)
     private Genre _genre;
+
+    @Column(name="NAME")
     private String _name;
+
+    @Column(name="IMAGE_NAME")
     private String _imageName;
+
+    @ManyToMany(mappedBy = "_performers")
     private Set<Concert> _concerts;
 
     public Performer() {

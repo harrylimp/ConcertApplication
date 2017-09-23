@@ -4,9 +4,7 @@ import nz.ac.auckland.concert.common.types.PriceBand;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -17,11 +15,33 @@ public class Concert {
 
     @Id
     @GeneratedValue
+    @Column(name="CONCERT_ID")
     private Long _id;
 
+    @Column(name="TITLE")
     private String _title;
+
+    @ElementCollection
+    @CollectionTable(
+            name="CONCERT_DATES",
+            joinColumns=@JoinColumn(name="CONCERT_ID"))
+    @Column(name="DATE")
     private Set<LocalDateTime> _dates;
+
+    @ElementCollection
+    @CollectionTable(
+            name="CONCERT_TARIFS",
+            joinColumns=@JoinColumn(name="CONCERT_ID"))
+    @MapKeyEnumerated(EnumType.STRING)
+    @MapKeyColumn(name="PRICEBAND")
+    @Column(name="TOTAL_COST")
     private Map<PriceBand, BigDecimal> _tariff;
+
+    @ManyToMany
+    @JoinTable (
+            name = "CONCERT_PERFORMER",
+            joinColumns = @JoinColumn(name="CONCERT_ID"),
+            inverseJoinColumns = @JoinColumn(name="PERFORMER_ID", nullable=false, unique=true))
     private Set<Performer> _performers;
 
     public Concert() {
@@ -36,43 +56,43 @@ public class Concert {
         _performers = performers;
     }
 
-    public Long get_id() {
+    public Long getId() {
         return _id;
     }
 
-    public void set_id(Long _id) {
+    public void setId(Long _id) {
         this._id = _id;
     }
 
-    public String get_title() {
+    public String getTitle() {
         return _title;
     }
 
-    public void set_title(String _title) {
+    public void setTitle(String _title) {
         this._title = _title;
     }
 
-    public Set<LocalDateTime> get_dates() {
+    public Set<LocalDateTime> getDates() {
         return _dates;
     }
 
-    public void set_dates(Set<LocalDateTime> _dates) {
+    public void setDates(Set<LocalDateTime> _dates) {
         this._dates = _dates;
     }
 
-    public Map<PriceBand, BigDecimal> get_tariff() {
+    public Map<PriceBand, BigDecimal> getTariff() {
         return _tariff;
     }
 
-    public void set_tariff(Map<PriceBand, BigDecimal> _tariff) {
+    public void setTariff(Map<PriceBand, BigDecimal> _tariff) {
         this._tariff = _tariff;
     }
 
-    public Set<Performer> get_performers() {
+    public Set<Performer> getPerformers() {
         return _performers;
     }
 
-    public void set_performers(Set<Performer> _performers) {
+    public void setPerformers(Set<Performer> _performers) {
         this._performers = _performers;
     }
 
