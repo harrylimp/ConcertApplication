@@ -12,7 +12,6 @@ import java.util.Set;
 public class Performer {
 
     @Id
-    @GeneratedValue
     @Column(nullable=false, name="PERFORMER_ID")
     private Long _id;
 
@@ -83,7 +82,6 @@ public class Performer {
                 append(_name).
                 append(_imageName).
                 append(_genre).
-                append(_concerts).
                 hashCode();
     }
 }

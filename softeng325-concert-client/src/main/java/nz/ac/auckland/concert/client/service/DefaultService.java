@@ -1,6 +1,7 @@
 package nz.ac.auckland.concert.client.service;
 
 import java.awt.Image;
+import java.util.HashSet;
 import java.util.Set;
 
 import nz.ac.auckland.concert.common.dto.BookingDTO;
@@ -10,19 +11,57 @@ import nz.ac.auckland.concert.common.dto.PerformerDTO;
 import nz.ac.auckland.concert.common.dto.ReservationDTO;
 import nz.ac.auckland.concert.common.dto.ReservationRequestDTO;
 import nz.ac.auckland.concert.common.dto.UserDTO;
+import nz.ac.auckland.concert.service.domain.Concert;
+import nz.ac.auckland.concert.service.services.ConcertMapper;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 public class DefaultService implements ConcertService {
 
+	private static Client _client;
+
+    private static String WEB_SERVICE_URI = "http://localhost:10000/services/concerts";
+
 	@Override
 	public Set<ConcertDTO> getConcerts() throws ServiceException {
-		// TODO Auto-generated method stub
-		return null;
+		Response response = null;
+        Set<ConcertDTO> concerts = null;
+		try {
+			_client = ClientBuilder.newClient();
+			Builder builder = _client.target(WEB_SERVICE_URI + "/getConcerts").request().accept(MediaType.APPLICATION_XML);
+			response = builder.get();
+
+			concerts = response.readEntity(new GenericType<Set<ConcertDTO>>(){});
+
+		} catch (Exception e) {
+		} finally {
+			_client.close();
+		}
+		return concerts;
 	}
 
 	@Override
 	public Set<PerformerDTO> getPerformers() throws ServiceException {
-		// TODO Auto-generated method stub
-		return null;
+        Response response = null;
+        Set<PerformerDTO> performers = null;
+
+        try {
+            _client = ClientBuilder.newClient();
+            Builder builder = _client.target(WEB_SERVICE_URI + "/getPerformers").request();
+            response = builder.get();
+
+            performers = response.readEntity(new GenericType<Set<PerformerDTO>>(){});
+        } catch (Exception e) {
+
+        } finally {
+            _client.close();
+        }
+        return performers;
 	}
 
 	@Override

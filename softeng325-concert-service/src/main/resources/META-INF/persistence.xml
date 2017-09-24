@@ -23,6 +23,8 @@
 	     
 	<persistence-unit name="nz.ac.auckland.concert">
 		<!-- Specify each class to map using a class element -->
+		<class>nz.ac.auckland.concert.service.domain.Concert</class>
+		<class>nz.ac.auckland.concert.service.domain.Performer</class>
 
 		<properties>
 			<!--  Configure the data source. In this case the embedded H2 database
@@ -47,9 +49,9 @@
 				read. use_sql_comments generates comments to explain why the SQL is 
 				generated. When these properties are set to true, the output occurs 
 				regardless of any log4j output-level settings. -->
-			<property name="hibernate.show_sql" value="false" />
-			<property name="hibernate.format_sql" value="false" />
-			<property name="hibernate.use_sql_comments" value="false" />
+			<property name="hibernate.show_sql" value="true" />
+			<property name="hibernate.format_sql" value="true" />
+			<property name="hibernate.use_sql_comments" value="true" />
 		</properties>
 	</persistence-unit>
 

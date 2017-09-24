@@ -11,10 +11,10 @@ import java.util.Map;
 import java.util.Set;
 
 @Entity
+@Table(name="CONCERTS")
 public class Concert {
 
     @Id
-    @GeneratedValue
     @Column(name="CONCERT_ID")
     private Long _id;
 
@@ -118,7 +118,6 @@ public class Concert {
                 append(_title).
                 append(_dates).
                 append(_tariff).
-                append(_performers).
                 hashCode();
     }
 }
