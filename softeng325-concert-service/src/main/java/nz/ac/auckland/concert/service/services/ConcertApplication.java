@@ -1,5 +1,6 @@
 package nz.ac.auckland.concert.service.services;
 
+import javax.persistence.EntityManager;
 import javax.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;

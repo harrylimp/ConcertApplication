@@ -3,12 +3,30 @@ package nz.ac.auckland.concert.service.domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import javax.persistence.*;
+
+@Entity
+@Table(name="USERS")
 public class User {
 
+    @Id
+    @Column(name="USERNAME")
     private String _username;
+
+    @Column(name="PASSWORD")
     private String _password;
+
+    @Column(name="FIRSTNAME")
     private String _firstname;
+
+    @Column(name="LASTNAME")
     private String _lastname;
+
+    @CollectionTable(
+            name="USER_COOKIES",
+            joinColumns=@JoinColumn(name="USERNAME"))
+    @Column(name="CookieID")
+    private String _uuid;
 
     protected User() {}
 
@@ -39,6 +57,11 @@ public class User {
         return _lastname;
     }
 
+    public String getUUID() { return _uuid; }
+
+    public void setUUID(String uuid) {
+        _uuid = uuid;
+    }
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof User))

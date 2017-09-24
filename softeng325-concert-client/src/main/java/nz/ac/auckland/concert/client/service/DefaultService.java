@@ -16,10 +16,12 @@ import nz.ac.auckland.concert.service.services.ConcertMapper;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.xml.ws.Service;
 
 public class DefaultService implements ConcertService {
 
@@ -66,13 +68,31 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public UserDTO createUser(UserDTO newUser) throws ServiceException {
-		// TODO Auto-generated method stub
-		return null;
+		Response response = null;
+		UserDTO userDTO = null;
+
+		_client = ClientBuilder.newClient();
+		Builder builder = _client.target(WEB_SERVICE_URI + "/createUser").request().accept(MediaType.APPLICATION_XML);
+		response = builder.post(Entity.entity(newUser, MediaType.APPLICATION_XML));
+
+		int responseCode = response.getStatus();
+		switch(responseCode) {
+			case 400:
+				String errorMessage = response.readEntity(String.class);
+				throw new ServiceException(errorMessage);
+			case 201: // CREATED
+				userDTO = response.readEntity(UserDTO.class);
+		}
+		_client.close();
+		return userDTO;
 	}
 
 	@Override
 	public UserDTO authenticateUser(UserDTO user) throws ServiceException {
 		// TODO Auto-generated method stub
+
+		//
+
 		return null;
 	}
 
