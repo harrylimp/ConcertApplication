@@ -2,6 +2,7 @@ package nz.ac.auckland.concert.client.service;
 
 import java.awt.Image;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import nz.ac.auckland.concert.common.dto.BookingDTO;
@@ -20,6 +21,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.xml.ws.Service;
 
@@ -28,6 +30,8 @@ public class DefaultService implements ConcertService {
 	private static Client _client;
 
     private static String WEB_SERVICE_URI = "http://localhost:10000/services/concerts";
+
+    private static String _cookie;
 
 	@Override
 	public Set<ConcertDTO> getConcerts() throws ServiceException {
@@ -82,6 +86,11 @@ public class DefaultService implements ConcertService {
 				throw new ServiceException(errorMessage);
 			case 201: // CREATED
 				userDTO = response.readEntity(UserDTO.class);
+
+                Map<String, NewCookie> cookies = response.getCookies();
+                if(cookies.containsKey(userDTO.getUsername())) {
+                    _cookie = cookies.get(userDTO.getUsername()).getValue();
+                }
 		}
 		_client.close();
 		return userDTO;
@@ -90,10 +99,29 @@ public class DefaultService implements ConcertService {
 	@Override
 	public UserDTO authenticateUser(UserDTO user) throws ServiceException {
 		// TODO Auto-generated method stub
+        Response response = null;
+        UserDTO userDTO = null;
 
-		//
+        _client = ClientBuilder.newClient();
+        Builder builder = _client.target(WEB_SERVICE_URI + "/authenticateUser").request().accept(MediaType.APPLICATION_XML);
+        response = builder.put(Entity.entity(user, MediaType.APPLICATION_XML));
 
-		return null;
+        int responseCode = response.getStatus();
+        switch(responseCode) {
+            case 400:
+                String errorMessage = response.readEntity(String.class);
+                throw new ServiceException(errorMessage);
+            case 200: // CREATED
+                userDTO = response.readEntity(UserDTO.class);
+
+                Map<String, NewCookie> cookies = response.getCookies();
+                if(cookies.containsKey(userDTO.getUsername())) {
+                    _cookie = cookies.get(userDTO.getUsername()).getValue();
+                }
+
+        }
+        _client.close();
+        return userDTO;
 	}
 
 	@Override
