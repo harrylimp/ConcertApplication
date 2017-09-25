@@ -4,20 +4,32 @@ import nz.ac.auckland.concert.common.dto.SeatDTO;
 import nz.ac.auckland.concert.common.jaxb.LocalDateAdapter;
 import nz.ac.auckland.concert.common.types.SeatNumber;
 import nz.ac.auckland.concert.common.types.SeatRow;
+import nz.ac.auckland.concert.common.types.SeatStatus;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import javax.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name="SEATS")
+public class Seat implements Serializable {
 
-public class Seat {
-
-    private enum Status { EMPTY, RESERVED, BOOKED }
-
+    @Id
+    @Column(name="SEAT_ROW")
     SeatRow _row;
+
+    @Id
+    @Column(name="SEAT_NUMBER")
     SeatNumber _number;
+
+    @Id
+    @Column(name="DATES")
     private LocalDateTime _dateTime;
-    private Status _status;
+
+    @Column(name="SEAT_STATUS")
+    private SeatStatus _status;
 
     public Seat() {
 
@@ -28,7 +40,7 @@ public class Seat {
         _number = seatNumber;
     }
 
-    public Seat(SeatRow seatRow, SeatNumber seatNumber, LocalDateTime dateTime, Status status) {
+    public Seat(SeatRow seatRow, SeatNumber seatNumber, LocalDateTime dateTime, SeatStatus status) {
         _row = seatRow;
         _number = seatNumber;
         _dateTime = dateTime;
@@ -42,6 +54,10 @@ public class Seat {
     public SeatNumber getNumber() {
         return _number;
     }
+
+    public LocalDateTime getDateTime() { return _dateTime; }
+
+    public SeatStatus getStatus() { return _status; }
 
     @Override
     public boolean equals(Object obj) {

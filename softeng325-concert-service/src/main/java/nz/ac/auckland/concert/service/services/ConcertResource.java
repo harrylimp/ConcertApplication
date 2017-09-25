@@ -80,7 +80,6 @@ public class ConcertResource {
     @Path("/createUser")
     public Response createUser(UserDTO userDTO) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        em.getTransaction().begin();
 
         String username = userDTO.getUsername();
         String password = userDTO.getPassword();
@@ -95,6 +94,7 @@ public class ConcertResource {
         } else {
             ResponseBuilder response = null;
             User user = ObjectMapper.userToDomainModel(userDTO);
+            em.getTransaction().begin();
             User newUser = em.find(User.class, user.getUsername());
 
             if (newUser == null) {
@@ -133,6 +133,7 @@ public class ConcertResource {
                     .entity(Messages.AUTHENTICATE_USER_WITH_MISSING_FIELDS) // Change message type
                     .build());
         } else {
+            em.getTransaction().begin();
             ResponseBuilder response = null;
             User user = new User(username, password); // Change this implementation into ObjectMapper later
             User newUser = em.find(User.class, user.getUsername());
@@ -144,7 +145,8 @@ public class ConcertResource {
                         .entity(Messages.AUTHENTICATE_NON_EXISTENT_USER) // Change message type
                         .build());
             } else {
-                if (newUser.getPassword() != userDTO.getPassword()) {
+                if (!newUser.getPassword().equals(userDTO.getPassword())) {
+                    em.close();
                     throw new BadRequestException(Response
                             .status(Response.Status.BAD_REQUEST)
                             .entity(Messages.AUTHENTICATE_USER_WITH_ILLEGAL_PASSWORD) // Change message type

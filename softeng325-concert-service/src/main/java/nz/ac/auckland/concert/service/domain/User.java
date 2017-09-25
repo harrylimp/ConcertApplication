@@ -22,10 +22,7 @@ public class User {
     @Column(name="LASTNAME")
     private String _lastname;
 
-    @CollectionTable(
-            name="USER_COOKIES",
-            joinColumns=@JoinColumn(name="USERNAME"))
-    @Column(name="CookieID")
+    @Column(name="COOKIE_ID")
     private String _uuid;
 
     protected User() {}

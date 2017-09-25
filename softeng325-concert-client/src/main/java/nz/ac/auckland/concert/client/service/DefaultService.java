@@ -31,7 +31,7 @@ public class DefaultService implements ConcertService {
 
     private static String WEB_SERVICE_URI = "http://localhost:10000/services/concerts";
 
-    private static String _cookie;
+    private String _cookie;
 
 	@Override
 	public Set<ConcertDTO> getConcerts() throws ServiceException {
@@ -88,8 +88,8 @@ public class DefaultService implements ConcertService {
 				userDTO = response.readEntity(UserDTO.class);
 
                 Map<String, NewCookie> cookies = response.getCookies();
-                if(cookies.containsKey(userDTO.getUsername())) {
-                    _cookie = cookies.get(userDTO.getUsername()).getValue();
+                if(cookies.containsKey(newUser.getUsername())) {
+                    _cookie = cookies.get(newUser.getUsername()).getValue();
                 }
 		}
 		_client.close();
@@ -115,8 +115,8 @@ public class DefaultService implements ConcertService {
                 userDTO = response.readEntity(UserDTO.class);
 
                 Map<String, NewCookie> cookies = response.getCookies();
-                if(cookies.containsKey(userDTO.getUsername())) {
-                    _cookie = cookies.get(userDTO.getUsername()).getValue();
+                if(cookies.containsKey(user.getUsername())) {
+                    _cookie = cookies.get(user.getUsername()).getValue();
                 }
 
         }
@@ -130,32 +130,94 @@ public class DefaultService implements ConcertService {
 		return null;
 	}
 
-	@Override
+
+/**
+ * Attempts to reserve seats for a concert. The reservation is valid for a
+ * short period that is determine by the remote service.
+ *
+ * @param reservationRequest a description of the reservation, including
+ * number of seats, price band, concert identifier, and concert date. All
+ * fields are expected to be filled.
+ *
+ * @return a ReservationDTO object that describes the reservation. This
+ * includes the original ReservationDTO parameter plus the seats (a Set of
+ * SeatDTO objects) that have been reserved.
+ */
+ @Override
 	public ReservationDTO reserveSeats(ReservationRequestDTO reservationRequest) throws ServiceException {
-		// TODO Auto-generated method stub
+
+
+
+		// Reservation that includes all the fields
+
+		// Check if the user is authenticated or not
+		// Check if the token is valid or not
+		// Check if the DTO has all the fields
+		// Check if the datetime is relevant to the concert
+		// Check if the number of seats are available
+
 		return null;
 	}
 
+	/**
+	 * Confirms a reservation. Prior to calling this method, a successful
+	 * reservation request should have been made via a call to reserveSeats(),
+	 * returning a ReservationDTO.
+	 *
+	 * @param reservation a description of the reservation to confirm.
+	 *
+	 * @throws ServiceException in response to any of the following conditions.
+	 * The exception's message is defined in
+	 * class nz.ac.auckland.concert.common.Messages.
+	 *
+	 * Condition: the request is made by an unauthenticated user.
+	 * Messages.UNAUTHENTICATED_REQUEST
+	 *
+	 * Condition: the request includes an authentication token but it's not
+	 * recognised by the remote service.
+	 * Messages.BAD_AUTHENTICATON_TOKEN
+	 *
+	 * Condition: the reservation has expired.
+	 * Messages.EXPIRED_RESERVATION
+	 *
+	 * Condition: the user associated with the request doesn't have a credit
+	 * card registered with the remote service.
+	 * Messages.CREDIT_CARD_NOT_REGISTERED
+	 *
+	 * Condition: there is a communication error.
+	 * Messages.SERVICE_COMMUNICATION_ERROR
+	 *
+	 */
 	@Override
 	public void confirmReservation(ReservationDTO reservation) throws ServiceException {
 		// TODO Auto-generated method stub
-		
+
+		// Need a way of confirming the reservation somehow?
+
 	}
 
 	@Override
 	public void registerCreditCard(CreditCardDTO creditCard) throws ServiceException {
 		// TODO Auto-generated method stub
+
+		// Credit card should be associated with a particular user.
 		
 	}
 
 	@Override
 	public Set<BookingDTO> getBookings() throws ServiceException {
 		// TODO Auto-generated method stub
+
+		// Need to get back all the Bookings of something
+
 		return null;
 	}
 
 	@Override
 	public void subscribeForNewsItems(NewsItemListener listener) {
+
+		// Some sort of subscription application
+
 		throw new UnsupportedOperationException();
 		
 	}

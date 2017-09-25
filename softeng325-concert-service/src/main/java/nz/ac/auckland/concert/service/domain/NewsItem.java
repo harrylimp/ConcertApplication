@@ -3,11 +3,22 @@ package nz.ac.auckland.concert.service.domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.Id;
 import java.time.LocalDateTime;
 
+@Embeddable
 public class NewsItem {
+
+    @Id
+    @Column(name="NEWSITEM_ID")
     private Long _id;
+
+    @Column(name="TIMESTAMP")
     private LocalDateTime _timestamp;
+
+    @Column(name="CONTENT")
     private String _content;
 
     public NewsItem() {}

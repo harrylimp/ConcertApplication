@@ -4,16 +4,30 @@ import nz.ac.auckland.concert.common.types.PriceBand;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+@Embeddable
+@Table(name="BOOKINGS")
 public class Booking {
+
+    @Column(name="CONCERT_ID")
     private Concert _concert;
+
+    @Column(name="CONCERT_TITLE")
     private String _concertTitle;
+
+    @Column(name="DATE")
     private LocalDateTime _dateTime;
+
+    @ElementCollection
     private Set<Seat> _seats;
+
+    @Column(name="GENRE")
+    @Enumerated(EnumType.STRING)
     private PriceBand _priceBand;
 
     public Booking() {

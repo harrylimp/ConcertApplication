@@ -3,13 +3,23 @@ package nz.ac.auckland.concert.service.domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+@Entity
+@Table(name="RESERVATIONS")
 public class Reservation {
+
+    @Id
+    @Column(name="RESERVATION_ID")
     private Long _id;
+
     private ReservationRequest _request;
+
+    @OneToMany
     private Set<Seat> _seats;
 
     public Reservation() {}

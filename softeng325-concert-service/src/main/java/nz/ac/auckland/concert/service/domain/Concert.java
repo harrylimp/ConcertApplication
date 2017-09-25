@@ -41,7 +41,7 @@ public class Concert {
     @JoinTable (
             name = "CONCERT_PERFORMER",
             joinColumns = @JoinColumn(name="CONCERT_ID"),
-            inverseJoinColumns = @JoinColumn(name="PERFORMER_ID", nullable=false, unique=true))
+            inverseJoinColumns = @JoinColumn(name="PERFORMER_ID", nullable=false))
     private Set<Performer> _performers;
 
     public Concert() {

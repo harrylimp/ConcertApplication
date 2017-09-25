@@ -2,6 +2,7 @@ package nz.ac.auckland.concert.service.services;
 
 import nz.ac.auckland.concert.common.types.SeatNumber;
 import nz.ac.auckland.concert.common.types.SeatRow;
+import nz.ac.auckland.concert.common.types.SeatStatus;
 import nz.ac.auckland.concert.common.util.TheatreLayout;
 import nz.ac.auckland.concert.service.domain.Concert;
 import nz.ac.auckland.concert.service.domain.Seat;
@@ -44,7 +45,7 @@ public class ConcertApplication extends Application {
 			em.getTransaction().begin();
 
 			// Delete all existing entities of some type
-			em.createQuery("delete from SEATS").executeUpdate();
+			em.createQuery("delete from Seat s").executeUpdate();
 
 			TypedQuery<Concert> concertQuery =
 					em.createQuery("select c from Concert c", Concert.class);
@@ -55,14 +56,14 @@ public class ConcertApplication extends Application {
 					for (SeatRow seatRow : SeatRow.values()) {
 						for (int i = 0; i < TheatreLayout.getNumberOfSeatsForRow(seatRow); i++) {
 							// Populate the number of seats here
-							Seat seat = new Seat();
+							Seat seat = new Seat(seatRow, new SeatNumber(i+1), dateTime, SeatStatus.Empty);
 							em.persist(seat);
 						}
-						em.flush();
-						em.clear();
 					}
 				}
 			}
+			em.flush();
+			em.clear();
 			em.getTransaction().commit();
 
 		} catch (Exception e) {
@@ -72,7 +73,6 @@ public class ConcertApplication extends Application {
 				em.close();
 			}
 		}
-
 	}
 
 	@Override
