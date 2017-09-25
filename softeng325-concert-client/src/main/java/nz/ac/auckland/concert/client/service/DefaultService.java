@@ -12,6 +12,7 @@ import nz.ac.auckland.concert.common.dto.PerformerDTO;
 import nz.ac.auckland.concert.common.dto.ReservationDTO;
 import nz.ac.auckland.concert.common.dto.ReservationRequestDTO;
 import nz.ac.auckland.concert.common.dto.UserDTO;
+import nz.ac.auckland.concert.common.types.Config;
 import nz.ac.auckland.concert.service.domain.Concert;
 import nz.ac.auckland.concert.service.services.ConcertMapper;
 
@@ -88,8 +89,8 @@ public class DefaultService implements ConcertService {
 				userDTO = response.readEntity(UserDTO.class);
 
                 Map<String, NewCookie> cookies = response.getCookies();
-                if(cookies.containsKey(newUser.getUsername())) {
-                    _cookie = cookies.get(newUser.getUsername()).getValue();
+                if(cookies.containsKey(Config.CLIENT_COOKIE)) {
+                    _cookie = cookies.get(Config.CLIENT_COOKIE).getValue();
                 }
 		}
 		_client.close();
@@ -115,8 +116,8 @@ public class DefaultService implements ConcertService {
                 userDTO = response.readEntity(UserDTO.class);
 
                 Map<String, NewCookie> cookies = response.getCookies();
-                if(cookies.containsKey(user.getUsername())) {
-                    _cookie = cookies.get(user.getUsername()).getValue();
+                if(cookies.containsKey(Config.CLIENT_COOKIE)) {
+                    _cookie = cookies.get(Config.CLIENT_COOKIE).getValue();
                 }
 
         }
@@ -146,17 +147,29 @@ public class DefaultService implements ConcertService {
  @Override
 	public ReservationDTO reserveSeats(ReservationRequestDTO reservationRequest) throws ServiceException {
 
+	 // TODO Auto-generated method stub
+	 Response response = null;
+	 ReservationDTO reservationDTO = null;
 
+	 _client = ClientBuilder.newClient();
+	 Builder builder = _client.target(WEB_SERVICE_URI + "/reservationRequest").request().accept(MediaType.APPLICATION_XML);
+	 builder.cookie(Config.CLIENT_COOKIE, _cookie);
+	 response = builder.put(Entity.entity(reservationRequest, MediaType.APPLICATION_XML));
 
-		// Reservation that includes all the fields
+	 int responseCode = response.getStatus();
 
-		// Check if the user is authenticated or not
-		// Check if the token is valid or not
-		// Check if the DTO has all the fields
-		// Check if the datetime is relevant to the concert
-		// Check if the number of seats are available
+	 // Reservation that includes all the fields
 
-		return null;
+	 switch(responseCode) {
+		 case 400:
+			 String errorMessage = response.readEntity(String.class);
+			 throw new ServiceException(errorMessage);
+		 case 200: // CREATED
+			 reservationDTO = response.readEntity(ReservationDTO.class);
+
+	 }
+	 _client.close();
+	 return reservationDTO;
 	}
 
 	/**
