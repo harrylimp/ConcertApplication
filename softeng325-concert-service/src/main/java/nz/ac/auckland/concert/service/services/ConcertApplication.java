@@ -1,8 +1,17 @@
 package nz.ac.auckland.concert.service.services;
 
+import nz.ac.auckland.concert.common.types.SeatNumber;
+import nz.ac.auckland.concert.common.types.SeatRow;
+import nz.ac.auckland.concert.common.util.TheatreLayout;
+import nz.ac.auckland.concert.service.domain.Concert;
+import nz.ac.auckland.concert.service.domain.Seat;
+
 import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 import javax.ws.rs.core.Application;
+import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -27,6 +36,43 @@ public class ConcertApplication extends Application {
 	public ConcertApplication() {
 		_singletons.add(new PersistenceManager());
 		_classes.add(ConcertResource.class);
+
+		EntityManager em = null;
+
+		try {
+			em = PersistenceManager.instance().createEntityManager();
+			em.getTransaction().begin();
+
+			// Delete all existing entities of some type
+			em.createQuery("delete from SEATS").executeUpdate();
+
+			TypedQuery<Concert> concertQuery =
+					em.createQuery("select c from Concert c", Concert.class);
+
+			// Make many entities of some type
+			for (Concert concert : concertQuery.getResultList()) {
+				for (LocalDateTime dateTime : concert.getDates()) {
+					for (SeatRow seatRow : SeatRow.values()) {
+						for (int i = 0; i < TheatreLayout.getNumberOfSeatsForRow(seatRow); i++) {
+							// Populate the number of seats here
+							Seat seat = new Seat();
+							em.persist(seat);
+						}
+						em.flush();
+						em.clear();
+					}
+				}
+			}
+			em.getTransaction().commit();
+
+		} catch (Exception e) {
+			// Process and log the exception
+		} finally {
+			if (em != null && em.isOpen()) {
+				em.close();
+			}
+		}
+
 	}
 
 	@Override
