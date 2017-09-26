@@ -12,7 +12,6 @@ import javax.persistence.TypedQuery;
 import javax.ws.rs.core.Application;
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**

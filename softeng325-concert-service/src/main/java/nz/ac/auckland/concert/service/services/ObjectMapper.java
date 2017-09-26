@@ -4,8 +4,6 @@ import nz.ac.auckland.concert.common.dto.*;
 import nz.ac.auckland.concert.common.types.SeatStatus;
 import nz.ac.auckland.concert.service.domain.*;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -97,7 +95,7 @@ public class ObjectMapper {
     }
 
     public static BookingDTO bookingToDTO(Booking booking) {
-        Set<SeatDTO> seatDTOs = null;
+        Set<SeatDTO> seatDTOs = new HashSet<SeatDTO>();
         for (Seat seat : booking.getSeats()) {
             seatDTOs.add(ObjectMapper.seatToDTO(seat));
         }

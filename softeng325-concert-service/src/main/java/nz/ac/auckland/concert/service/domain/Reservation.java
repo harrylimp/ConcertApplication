@@ -1,6 +1,5 @@
 package nz.ac.auckland.concert.service.domain;
 
-import nz.ac.auckland.concert.common.jaxb.LocalDateAdapter;
 import nz.ac.auckland.concert.common.types.PriceBand;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -9,7 +8,6 @@ import javax.persistence.*;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity

@@ -7,7 +7,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -60,6 +59,8 @@ public class Booking {
     public PriceBand getPriceBand() {
         return _priceBand;
     }
+
+    public User getUser() { return _user; }
 
     @Override
     public boolean equals(Object obj) {

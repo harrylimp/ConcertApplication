@@ -1,6 +1,5 @@
 package nz.ac.auckland.concert.service.domain;
 
-import nz.ac.auckland.concert.common.dto.CreditCardDTO;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 

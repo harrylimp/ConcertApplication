@@ -2,7 +2,6 @@ package nz.ac.auckland.concert.common.dto;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;

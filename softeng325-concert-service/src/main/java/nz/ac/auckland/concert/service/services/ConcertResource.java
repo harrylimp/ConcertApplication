@@ -13,11 +13,9 @@ import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Path("/concerts")
 @Consumes(MediaType.APPLICATION_XML)
@@ -36,7 +34,7 @@ public class ConcertResource {
 
         Set<ConcertDTO> concertDTOs = new HashSet<ConcertDTO>();
         for (Concert concert : concerts) {
-            concertDTOs.add(ConcertMapper.toDTO(concert));
+            concertDTOs.add(ObjectMapper.concertToDTO(concert));
         }
 
         GenericEntity<Set<ConcertDTO>> entity = new GenericEntity<Set<ConcertDTO>>(concertDTOs){};
@@ -62,7 +60,7 @@ public class ConcertResource {
 
         Set<PerformerDTO> performerDTOs = new HashSet<PerformerDTO>();
         for (Performer performer : performers) {
-            performerDTOs.add(PerformerMapper.toDTO(performer));
+            performerDTOs.add(ObjectMapper.performerToDTO(performer));
         }
 
         GenericEntity<Set<PerformerDTO>> entity = new GenericEntity<Set<PerformerDTO>>(performerDTOs){};
@@ -172,8 +170,6 @@ public class ConcertResource {
 
         EntityManager em = PersistenceManager.instance().createEntityManager();
 
-        System.out.println("HELLO?");
-
         String uuid = clientId.getValue();
         // CAN I DO THIS?
         if (uuid == null || uuid.length() == 0) {
@@ -184,8 +180,6 @@ public class ConcertResource {
                     .build());
         }
 
-        System.out.println(uuid + "empty?");
-
         TypedQuery<User> userQuery =
                 em.createQuery("select u from User u where u._uuid = :cookie ", User.class); // CHECK THIS QUERY
         userQuery.setParameter("cookie", uuid);
@@ -193,16 +187,12 @@ public class ConcertResource {
         List<User> users = userQuery.getResultList();
         if (users == null) {
             em.close();
-            System.out.println(uuid);
             User user = users.get(0);
-            System.out.println(user.getFirstname());
             throw new BadRequestException(Response
                     .status(Response.Status.BAD_REQUEST)
                     .entity(Messages.BAD_AUTHENTICATON_TOKEN)
                     .build());
         }
-
-        System.out.println("HELLO??!!?");
 
         // Extract DTO fields
         int numberOfSeats = reservationRequestDTO.getNumberOfSeats();
@@ -210,7 +200,6 @@ public class ConcertResource {
         Long concertID = reservationRequestDTO.getConcertId();
         LocalDateTime dateTime = reservationRequestDTO.getDate();
 
-        // NOT SURE IF DOING THESE CHECKS CORRECTLY
         if (numberOfSeats == 0 || priceBand == null || concertID == null || dateTime == null) {
             em.close();
             throw new BadRequestException(Response
@@ -219,20 +208,13 @@ public class ConcertResource {
                     .build());
         }
 
-
-        System.out.println("HELLO??!!?OO");
-
         // Making a query for the concert
         TypedQuery<Concert> concertQuery =
                 em.createQuery("select c from Concert c where c.id = :concertID ", Concert.class);
         concertQuery.setParameter("concertID", concertID);
-        List<Concert> concerts = concertQuery.getResultList();
+        Concert concert = concertQuery.getSingleResult();
 
-        // This is valid right?
-        Concert concert = concerts.get(0);
-        if (concert == null) {
-            // This concert does not exist
-        } else {
+        if (concert != null) {
             Boolean isDate = false;
             for (LocalDateTime date : concert.getDates()) {
                 if (date.equals(dateTime)) { // CAN WE COMPARE LIKE THIS?
@@ -267,12 +249,6 @@ public class ConcertResource {
                 numberOfSeats,
                 reservationRequestDTO.getSeatType(),
                 bookedSeats);
-
-        System.out.println(availableSeats.size() + " " + reservationRequestDTO.getNumberOfSeats());
-
-        for (SeatDTO seatDTO : availableSeats) {
-            System.out.println(seatDTO.getNumber() + " " + seatDTO.getRow());
-        }
 
         if (numberOfSeats > availableSeats.size()) {
             em.close();
@@ -330,12 +306,12 @@ public class ConcertResource {
             em.close();
             throw new BadRequestException(Response
                     .status(Response.Status.BAD_REQUEST)
-                    .entity(Messages.UNAUTHENTICATED_REQUEST) // Change message type
+                    .entity(Messages.UNAUTHENTICATED_REQUEST)
                     .build());
         }
 
         TypedQuery<User> userQuery =
-                em.createQuery("select u from User u where u._uuid = :cookie ", User.class); // CHECK THIS QUERY
+                em.createQuery("select u from User u where u._uuid = :cookie ", User.class);
         userQuery.setParameter("cookie", uuid);
 
         User user = userQuery.getSingleResult();
@@ -355,7 +331,6 @@ public class ConcertResource {
         reservationQuery.setParameter("id", id);
         Reservation reservation = reservationQuery.getSingleResult();
 
-        System.out.println("reservation" + reservation.getTime());
         Timestamp reservationTime = reservation.getTime();
         if (currentTime.getTime() > reservationTime.getTime()) {
             // CHANGE THE SEATS BACK TO 0
@@ -368,7 +343,7 @@ public class ConcertResource {
 
         // Need to check for credit card
         Set<CreditCard> creditCards = user.getCreditCard();
-        if (creditCards == null) {
+        if (creditCards.isEmpty()) {
             em.close();
             throw new BadRequestException(Response
                     .status(Response.Status.BAD_REQUEST)
@@ -398,6 +373,7 @@ public class ConcertResource {
         );
         user.addBooking(booking);
 
+        em.persist(booking);
         em.persist(user);
         em.getTransaction().commit();
         em.close();
@@ -418,13 +394,13 @@ public class ConcertResource {
             em.close();
             throw new BadRequestException(Response
                     .status(Response.Status.BAD_REQUEST)
-                    .entity(Messages.UNAUTHENTICATED_REQUEST) // Change message type
+                    .entity(Messages.UNAUTHENTICATED_REQUEST)
                     .build());
         }
 
         em.getTransaction().begin();
         TypedQuery<User> userQuery =
-                em.createQuery("select u from User u where u._uuid = :cookie ", User.class); // CHECK THIS QUERY
+                em.createQuery("select u from User u where u._uuid = :cookie ", User.class);
         userQuery.setParameter("cookie", uuid);
 
         User user = userQuery.getSingleResult();
@@ -450,7 +426,6 @@ public class ConcertResource {
     @Path("/getBookings")
     public Response getBookings(@CookieParam("clientId") Cookie clientId) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        em.getTransaction().begin();
 
         String uuid = clientId.getValue();
         if (uuid == null || uuid.length() == 0) {
@@ -461,8 +436,10 @@ public class ConcertResource {
                     .build());
         }
 
+        em.getTransaction().begin();
+
         TypedQuery<User> userQuery =
-                em.createQuery("select u from User u where u._uuid = :cookie ", User.class); // CHECK THIS QUERY
+                em.createQuery("select u from User u where u._uuid = :cookie ", User.class);
         userQuery.setParameter("cookie", uuid);
 
         User user = userQuery.getSingleResult();
@@ -474,7 +451,7 @@ public class ConcertResource {
                     .build());
         }
 
-        Set<BookingDTO> bookingDTOs = new HashSet<BookingDTO>();
+        Set<BookingDTO> bookingDTOs = new HashSet<>();
         for (Booking booking : user.getBookings()) {
             bookingDTOs.add(ObjectMapper.bookingToDTO(booking));
         }
@@ -488,9 +465,7 @@ public class ConcertResource {
     }
 
     private NewCookie makeCookie(User user){
-
         NewCookie newCookie = new NewCookie(Config.CLIENT_COOKIE, UUID.randomUUID().toString());
         return newCookie;
-
     }
 }
