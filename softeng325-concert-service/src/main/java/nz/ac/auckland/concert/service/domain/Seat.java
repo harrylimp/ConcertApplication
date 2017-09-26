@@ -76,6 +76,7 @@ public class Seat implements Serializable {
         return new EqualsBuilder().
                 append(_row, rhs._row).
                 append(_number, rhs._number).
+                append(_dateTime, rhs._dateTime).
                 isEquals();
     }
 
@@ -84,6 +85,7 @@ public class Seat implements Serializable {
         return new HashCodeBuilder(17, 31).
                 append(_row).
                 append(_number).
+                append(_dateTime).
                 hashCode();
     }
 

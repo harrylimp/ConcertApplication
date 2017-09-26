@@ -323,6 +323,8 @@ public class ConcertResource {
     public Response confirmReservation(ReservationDTO reservationDTO, @CookieParam("clientId") Cookie clientId) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
 
+        em.getTransaction().begin();
+
         String uuid = clientId.getValue();
         if (uuid == null || uuid.length() == 0) {
             em.close();
@@ -356,6 +358,7 @@ public class ConcertResource {
         System.out.println("reservation" + reservation.getTime());
         Timestamp reservationTime = reservation.getTime();
         if (currentTime.getTime() > reservationTime.getTime()) {
+            // CHANGE THE SEATS BACK TO 0
             em.close();
             throw new BadRequestException(Response
                     .status(Response.Status.BAD_REQUEST)
@@ -386,15 +389,68 @@ public class ConcertResource {
             em.merge(currentSeat);
         }
 
+        Booking booking = new Booking(
+                reservation.getConcert(),
+                reservation.getDate(),
+                bookedSeats,
+                reservation.getSeatType(),
+                user
+        );
+        user.addBooking(booking);
 
+        em.persist(user);
+        em.getTransaction().commit();
+        em.close();
 
-        return Response.ok().build();
+        NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, uuid);
+        ResponseBuilder response = Response.ok().cookie(cookie);
+
+        return response.build();
     }
 
     @POST
     @Path("/registerCreditCard")
     public Response registerCreditCard(CreditCardDTO creditCardDTO, @CookieParam("clientId") Cookie clientId) {
         EntityManager em = PersistenceManager.instance().createEntityManager();
+
+        String uuid = clientId.getValue();
+        if (uuid == null || uuid.length() == 0) {
+            em.close();
+            throw new BadRequestException(Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(Messages.UNAUTHENTICATED_REQUEST) // Change message type
+                    .build());
+        }
+
+        em.getTransaction().begin();
+        TypedQuery<User> userQuery =
+                em.createQuery("select u from User u where u._uuid = :cookie ", User.class); // CHECK THIS QUERY
+        userQuery.setParameter("cookie", uuid);
+
+        User user = userQuery.getSingleResult();
+        if (user == null) {
+            em.close();
+            throw new BadRequestException(Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(Messages.BAD_AUTHENTICATON_TOKEN)
+                    .build());
+        }
+
+        user.setCreditCard(ObjectMapper.creditCardToDomainModel(creditCardDTO));
+
+        em.persist(user);
+        em.getTransaction().commit();
+        em.close();
+
+        NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, uuid);
+        return Response.status(200).cookie(cookie).build();
+    }
+
+    @GET
+    @Path("/getBookings")
+    public Response getBookings(@CookieParam("clientId") Cookie clientId) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        em.getTransaction().begin();
 
         String uuid = clientId.getValue();
         if (uuid == null || uuid.length() == 0) {
@@ -418,15 +474,17 @@ public class ConcertResource {
                     .build());
         }
 
-        em.getTransaction().begin();
-        user.setCreditCard(ObjectMapper.creditCardToDomainModel(creditCardDTO));
+        Set<BookingDTO> bookingDTOs = new HashSet<BookingDTO>();
+        for (Booking booking : user.getBookings()) {
+            bookingDTOs.add(ObjectMapper.bookingToDTO(booking));
+        }
 
-        em.persist(user);
+        GenericEntity<Set<BookingDTO>> entity = new GenericEntity<Set<BookingDTO>>(bookingDTOs){};
         em.getTransaction().commit();
         em.close();
 
         NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, uuid);
-        return Response.status(200).cookie(cookie).build();
+        return Response.ok(entity).cookie(cookie).build();
     }
 
     private NewCookie makeCookie(User user){

@@ -1,6 +1,7 @@
 package nz.ac.auckland.concert.client.service;
 
 import java.awt.Image;
+import java.awt.print.Book;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -243,11 +244,25 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public Set<BookingDTO> getBookings() throws ServiceException {
-		// TODO Auto-generated method stub
+		Response response = null;
 
-		// Need to get back all the Bookings of something
+		_client = ClientBuilder.newClient();
+		Builder builder = _client.target(WEB_SERVICE_URI + "/getBookings").request().accept(MediaType.APPLICATION_XML);
+		builder.cookie(Config.CLIENT_COOKIE, _cookie);
+		response = builder.get();
 
-		return null;
+		int responseCode = response.getStatus();
+
+		Set<BookingDTO> bookedSeats = null;
+		switch(responseCode) {
+			case 400:
+				String errorMessage = response.readEntity(String.class);
+				throw new ServiceException(errorMessage);
+			case 200:
+				bookedSeats = response.readEntity(new GenericType<Set<BookingDTO>>(){});
+		}
+		_client.close();
+		return bookedSeats;
 	}
 
 	@Override

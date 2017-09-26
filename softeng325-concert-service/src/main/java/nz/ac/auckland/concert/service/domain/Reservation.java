@@ -50,12 +50,6 @@ public class Reservation {
         _timeStamp = timestamp;
     }
 
-    public Reservation(Long id, ReservationRequest request, Set<Seat> seats) {
-        _id = id;
-        //_request = request;
-        _seats = new HashSet<Seat>(seats);
-    }
-
     public int getNumberOfSeats() {
         return _numberOfSeats;
     }

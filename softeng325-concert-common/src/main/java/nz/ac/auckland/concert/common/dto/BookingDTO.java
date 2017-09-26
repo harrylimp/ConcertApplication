@@ -54,10 +54,7 @@ public class BookingDTO {
 		_concertId = concertId;
 		_concertTitle = concertTitle;
 		_dateTime = dateTime;
-
-		_seats = new HashSet<SeatDTO>();
-		_seats.addAll(seats);
-
+		_seats = seats;
 		_priceBand = priceBand;
 	}
 

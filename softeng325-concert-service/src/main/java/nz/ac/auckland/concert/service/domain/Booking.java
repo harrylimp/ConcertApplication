@@ -24,9 +24,6 @@ public class Booking {
     @ManyToOne
     private Concert _concert;
 
-    @Column(name="CONCERT_TITLE")
-    private String _concertTitle;
-
     @Column(name="DATE")
     private LocalDateTime _dateTime;
 
@@ -40,24 +37,16 @@ public class Booking {
     public Booking() {
     }
 
-    public Booking(Concert concert, String concertTitle,
-                      LocalDateTime dateTime, Set<Seat> seats, PriceBand priceBand) {
+    public Booking(Concert concert, LocalDateTime dateTime, Set<Seat> seats, PriceBand priceBand, User user) {
         _concert = concert;
-        _concertTitle = concertTitle;
         _dateTime = dateTime;
-
-        _seats = new HashSet<Seat>();
-        _seats.addAll(seats);
-
+        _seats = seats;
         _priceBand = priceBand;
+        _user = user;
     }
 
-    public Concert getConcertId() {
+    public Concert getConcert() {
         return _concert;
-    }
-
-    public String getConcertTitle() {
-        return _concertTitle;
     }
 
     public LocalDateTime getDateTime() {
@@ -81,7 +70,6 @@ public class Booking {
 
         Booking rhs = (Booking) obj;
         return new EqualsBuilder().append(_concert, rhs._concert)
-                .append(_concertTitle, rhs._concertTitle)
                 .append(_dateTime, rhs._dateTime)
                 .append(_seats, rhs._seats)
                 .append(_priceBand, rhs._priceBand).isEquals();
@@ -90,7 +78,6 @@ public class Booking {
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 31).append(_concert)
-                .append(_concertTitle).append(_dateTime).append(_seats)
                 .append(_priceBand).hashCode();
     }
 
@@ -98,7 +85,7 @@ public class Booking {
     public String toString() {
         StringBuffer buffer = new StringBuffer();
         buffer.append("concert: ");
-        buffer.append(_concertTitle);
+        buffer.append(_concert.getTitle());
         buffer.append(", date/time ");
         buffer.append(_seats.size());
         buffer.append(" ");

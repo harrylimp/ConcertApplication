@@ -95,4 +95,19 @@ public class ObjectMapper {
         );
         return creditCard;
     }
+
+    public static BookingDTO bookingToDTO(Booking booking) {
+        Set<SeatDTO> seatDTOs = null;
+        for (Seat seat : booking.getSeats()) {
+            seatDTOs.add(ObjectMapper.seatToDTO(seat));
+        }
+        BookingDTO bookingDTO = new BookingDTO(
+                booking.getConcert().getId(),
+                booking.getConcert().getTitle(),
+                booking.getDateTime(),
+                seatDTOs,
+                booking.getPriceBand()
+        );
+        return bookingDTO;
+    }
 }
