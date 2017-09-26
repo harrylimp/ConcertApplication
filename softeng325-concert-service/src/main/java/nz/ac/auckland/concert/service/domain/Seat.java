@@ -5,10 +5,12 @@ import nz.ac.auckland.concert.common.jaxb.LocalDateAdapter;
 import nz.ac.auckland.concert.common.types.SeatNumber;
 import nz.ac.auckland.concert.common.types.SeatRow;
 import nz.ac.auckland.concert.common.types.SeatStatus;
+import nz.ac.auckland.concert.service.domain.jpa.SeatNumberConverter;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import javax.persistence.*;
+import javax.persistence.metamodel.SetAttribute;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -21,14 +23,16 @@ public class Seat implements Serializable {
     SeatRow _row;
 
     @Id
+    @Convert(converter = SeatNumberConverter.class)
     @Column(name="SEAT_NUMBER")
     SeatNumber _number;
 
     @Id
-    @Column(name="DATES")
+    @Column
     private LocalDateTime _dateTime;
 
-    @Column(name="SEAT_STATUS")
+    @Column
+    @Enumerated(EnumType.STRING)
     private SeatStatus _status;
 
     public Seat() {
@@ -58,6 +62,8 @@ public class Seat implements Serializable {
     public LocalDateTime getDateTime() { return _dateTime; }
 
     public SeatStatus getStatus() { return _status; }
+
+    public void setStatus(SeatStatus status) { _status = status; }
 
     @Override
     public boolean equals(Object obj) {

@@ -1,15 +1,12 @@
 package nz.ac.auckland.concert.service.services;
 
-import nz.ac.auckland.concert.common.dto.ConcertDTO;
-import nz.ac.auckland.concert.common.dto.PerformerDTO;
-import nz.ac.auckland.concert.common.dto.ReservationRequestDTO;
-import nz.ac.auckland.concert.common.dto.UserDTO;
+import nz.ac.auckland.concert.common.dto.*;
 import nz.ac.auckland.concert.common.message.Messages;
 import nz.ac.auckland.concert.common.types.Config;
 import nz.ac.auckland.concert.common.types.PriceBand;
-import nz.ac.auckland.concert.service.domain.Concert;
-import nz.ac.auckland.concert.service.domain.Performer;
-import nz.ac.auckland.concert.service.domain.User;
+import nz.ac.auckland.concert.common.types.SeatStatus;
+import nz.ac.auckland.concert.service.domain.*;
+import nz.ac.auckland.concert.service.util.TheatreUtility;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -20,13 +17,13 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Path("/concerts")
 public class ConcertResource {
+
+    private Long reservationID = 1l;
 
     @GET
     @Path("/getConcerts")
@@ -176,7 +173,6 @@ public class ConcertResource {
         // Check if the number of seats are available
 
         EntityManager em = PersistenceManager.instance().createEntityManager();
-        em.getTransaction().begin();
 
         System.out.println("HELLO?");
 
@@ -225,6 +221,9 @@ public class ConcertResource {
                     .build());
         }
 
+
+        System.out.println("HELLO??!!?OO");
+
         // Making a query for the concert
         TypedQuery<Concert> concertQuery =
                 em.createQuery("select c from Concert c where c.id = :concertID ", Concert.class);
@@ -252,9 +251,63 @@ public class ConcertResource {
             }
         }
 
-        // THIS IS THE HARD PART!! Querying the SEATS TABLE!!!W
+        em.getTransaction().begin();
 
-        return null;
+        // LOL bad query but screw it
+        TypedQuery<Seat> reservedSeatsQuery =
+                em.createQuery("select s from Seat s where s._dateTime = :date and s._status in :statusList", Seat.class);
+        reservedSeatsQuery.setParameter("date", dateTime);
+        reservedSeatsQuery.setParameter("statusList", EnumSet.of(SeatStatus.Reserved, SeatStatus.Booked));
+        List<Seat> seats = reservedSeatsQuery.getResultList();
+
+        Set<SeatDTO> bookedSeats = new HashSet<SeatDTO>();
+        for (Seat seat : seats) {
+            bookedSeats.add(ObjectMapper.seatToDTO(seat));
+        }
+
+        Set<SeatDTO> availableSeats = TheatreUtility.findAvailableSeats(
+                numberOfSeats,
+                reservationRequestDTO.getSeatType(),
+                bookedSeats);
+
+        System.out.println(availableSeats.size() + " " + reservationRequestDTO.getNumberOfSeats());
+
+        for (SeatDTO seatDTO : availableSeats) {
+            System.out.println(seatDTO.getNumber() + " " + seatDTO.getRow());
+        }
+
+        if (numberOfSeats > availableSeats.size()) {
+            em.close();
+            throw new BadRequestException(Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(Messages.INSUFFICIENT_SEATS_AVAILABLE_FOR_RESERVATION) // Change message type
+                    .build());
+        }
+
+        Set<Seat> reservedSeats = new HashSet<Seat>();
+        for (SeatDTO seatDTO : availableSeats) {
+            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s._row = :row and s._number = :number and s._dateTime = :dateTime", Seat.class);
+            seatQuery.setParameter("row", seatDTO.getRow());
+            seatQuery.setParameter("number", seatDTO.getNumber());
+            seatQuery.setParameter("dateTime", dateTime);
+            Seat seat = seatQuery.getSingleResult();
+
+            seat.setStatus(SeatStatus.Reserved);
+            em.merge(seat);
+            reservedSeats.add(seat);
+        }
+
+        ReservationRequest request = ObjectMapper.reservationRequestToDomainModel(reservationRequestDTO);
+        Reservation reservation = new Reservation(request, reservedSeats);
+        em.persist(reservation);
+        em.getTransaction().commit();
+        em.close();
+
+        NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, uuid);
+        ReservationDTO reservationDTO = new ReservationDTO(reservation.getId(), reservationRequestDTO, availableSeats);
+        ResponseBuilder response = Response.ok(reservationDTO).cookie(cookie);
+
+        return response.build();
     }
 
     private NewCookie makeCookie(User user){

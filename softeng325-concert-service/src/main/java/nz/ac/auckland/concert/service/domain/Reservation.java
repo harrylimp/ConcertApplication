@@ -14,6 +14,7 @@ import java.util.Set;
 public class Reservation {
 
     @Id
+    @GeneratedValue
     @Column(name="RESERVATION_ID")
     private Long _id;
 
@@ -23,6 +24,11 @@ public class Reservation {
     private Set<Seat> _seats;
 
     public Reservation() {}
+
+    public Reservation(ReservationRequest request, Set<Seat> seats) {
+        _request = request;
+        _seats = seats;
+    }
 
     public Reservation(Long id, ReservationRequest request, Set<Seat> seats) {
         _id = id;

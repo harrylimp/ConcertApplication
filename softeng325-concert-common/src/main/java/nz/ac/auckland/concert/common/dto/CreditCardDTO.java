@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * DTO class to represent credit cards. 
  * 
@@ -15,13 +18,21 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
  * _expiryDate the credit card's expiry date. 
  *
  */
+@XmlRootElement
 public class CreditCardDTO {
 	
 	public enum Type {Visa, Master};
-	
+
+	@XmlElement(name="type")
 	private Type _type;
+
+	@XmlElement(name="name")
 	private String _name;
+
+	@XmlElement(name="number")
 	private String _number;
+
+	@XmlElement(name="expiryDate")
 	private LocalDate _expiryDate;
 	
 	public CreditCardDTO() {}

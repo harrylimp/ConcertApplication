@@ -157,7 +157,6 @@ public class DefaultService implements ConcertService {
 	 response = builder.put(Entity.entity(reservationRequest, MediaType.APPLICATION_XML));
 
 	 int responseCode = response.getStatus();
-
 	 // Reservation that includes all the fields
 
 	 switch(responseCode) {
