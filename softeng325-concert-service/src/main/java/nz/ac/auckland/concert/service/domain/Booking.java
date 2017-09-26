@@ -10,11 +10,18 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-@Embeddable
+@Entity
 @Table(name="BOOKINGS")
 public class Booking {
 
-    @Column(name="CONCERT_ID")
+    @Id
+    @GeneratedValue
+    private Long _id;
+
+    @ManyToOne
+    private User _user;
+
+    @ManyToOne
     private Concert _concert;
 
     @Column(name="CONCERT_TITLE")

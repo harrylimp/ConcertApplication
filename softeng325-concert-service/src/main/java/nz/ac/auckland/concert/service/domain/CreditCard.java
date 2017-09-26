@@ -8,21 +8,16 @@ import javax.persistence.*;
 import java.time.LocalDate;
 
 @Embeddable
-@Table(name="CREDIT_CARDS")
 public class CreditCard {
     public enum Type {Visa, Master};
 
-    @Column(name="CARD_TYPE")
     @Enumerated(EnumType.STRING)
     private CreditCard.Type _type;
 
-    @Column(name="NAME")
     private String _name;
 
-    @Column(name="NUMBER")
     private String _number;
 
-    @Column(name="EXPIRY_DATE")
     private LocalDate _expiryDate;
 
     public CreditCard() {}

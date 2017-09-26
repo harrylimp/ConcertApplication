@@ -11,19 +11,17 @@ import nz.ac.auckland.concert.service.util.TheatreUtility;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.GenericEntity;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Path("/concerts")
+@Consumes(MediaType.APPLICATION_XML)
 public class ConcertResource {
-
-    private Long reservationID = 1l;
 
     @GET
     @Path("/getConcerts")
@@ -297,8 +295,18 @@ public class ConcertResource {
             reservedSeats.add(seat);
         }
 
-        ReservationRequest request = ObjectMapper.reservationRequestToDomainModel(reservationRequestDTO);
-        Reservation reservation = new Reservation(request, reservedSeats);
+        TypedQuery<Concert> singleConcertQuery =
+                em.createQuery("select c from Concert c where c._id = :concertId", Concert.class);
+        singleConcertQuery.setParameter("concertId", reservationRequestDTO.getConcertId());
+        Concert newConcert = concertQuery.getSingleResult();
+
+        Reservation reservation = new Reservation(
+                reservationRequestDTO.getNumberOfSeats(),
+                reservationRequestDTO.getSeatType(),
+                newConcert,
+                reservationRequestDTO.getDate(),
+                reservedSeats,
+                new Timestamp(System.currentTimeMillis()));
         em.persist(reservation);
         em.getTransaction().commit();
         em.close();
@@ -308,6 +316,117 @@ public class ConcertResource {
         ResponseBuilder response = Response.ok(reservationDTO).cookie(cookie);
 
         return response.build();
+    }
+
+    @PUT
+    @Path("/confirmReservation")
+    public Response confirmReservation(ReservationDTO reservationDTO, @CookieParam("clientId") Cookie clientId) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+
+        String uuid = clientId.getValue();
+        if (uuid == null || uuid.length() == 0) {
+            em.close();
+            throw new BadRequestException(Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(Messages.UNAUTHENTICATED_REQUEST) // Change message type
+                    .build());
+        }
+
+        TypedQuery<User> userQuery =
+                em.createQuery("select u from User u where u._uuid = :cookie ", User.class); // CHECK THIS QUERY
+        userQuery.setParameter("cookie", uuid);
+
+        User user = userQuery.getSingleResult();
+        if (user == null) {
+            em.close();
+            throw new BadRequestException(Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(Messages.BAD_AUTHENTICATON_TOKEN)
+                    .build());
+        }
+
+        // Check if the registration has expired
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis() - ConcertApplication.RESERVATION_EXPIRY_TIME_IN_SECONDS * 1000);
+        Long id = reservationDTO.getId();
+        TypedQuery<Reservation> reservationQuery =
+                em.createQuery("select r from Reservation r where r._id = :id", Reservation.class);
+        reservationQuery.setParameter("id", id);
+        Reservation reservation = reservationQuery.getSingleResult();
+
+        System.out.println("reservation" + reservation.getTime());
+        Timestamp reservationTime = reservation.getTime();
+        if (currentTime.getTime() > reservationTime.getTime()) {
+            em.close();
+            throw new BadRequestException(Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(Messages.EXPIRED_RESERVATION)
+                    .build());
+        }
+
+        // Need to check for credit card
+        Set<CreditCard> creditCards = user.getCreditCard();
+        if (creditCards == null) {
+            em.close();
+            throw new BadRequestException(Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(Messages.CREDIT_CARD_NOT_REGISTERED)
+                    .build());
+        }
+
+        // Get the seats and change the status to booked
+        Set<Seat> bookedSeats = reservation.getSeats();
+        for (Seat seat: bookedSeats) {
+            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s._row = :row and s._number = :number and s._dateTime = :dateTime", Seat.class);
+            seatQuery.setParameter("row", seat.getRow());
+            seatQuery.setParameter("number", seat.getNumber());
+            seatQuery.setParameter("dateTime", seat.getDateTime());
+            Seat currentSeat = seatQuery.getSingleResult();
+
+            currentSeat.setStatus(SeatStatus.Booked);
+            em.merge(currentSeat);
+        }
+
+
+
+        return Response.ok().build();
+    }
+
+    @POST
+    @Path("/registerCreditCard")
+    public Response registerCreditCard(CreditCardDTO creditCardDTO, @CookieParam("clientId") Cookie clientId) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+
+        String uuid = clientId.getValue();
+        if (uuid == null || uuid.length() == 0) {
+            em.close();
+            throw new BadRequestException(Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(Messages.UNAUTHENTICATED_REQUEST) // Change message type
+                    .build());
+        }
+
+        TypedQuery<User> userQuery =
+                em.createQuery("select u from User u where u._uuid = :cookie ", User.class); // CHECK THIS QUERY
+        userQuery.setParameter("cookie", uuid);
+
+        User user = userQuery.getSingleResult();
+        if (user == null) {
+            em.close();
+            throw new BadRequestException(Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(Messages.BAD_AUTHENTICATON_TOKEN)
+                    .build());
+        }
+
+        em.getTransaction().begin();
+        user.setCreditCard(ObjectMapper.creditCardToDomainModel(creditCardDTO));
+
+        em.persist(user);
+        em.getTransaction().commit();
+        em.close();
+
+        NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, uuid);
+        return Response.status(200).cookie(cookie).build();
     }
 
     private NewCookie makeCookie(User user){

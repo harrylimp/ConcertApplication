@@ -4,6 +4,8 @@ import nz.ac.auckland.concert.common.dto.*;
 import nz.ac.auckland.concert.common.types.SeatStatus;
 import nz.ac.auckland.concert.service.domain.*;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -78,13 +80,19 @@ public class ObjectMapper {
         return seat;
     }
 
-    public static ReservationRequest reservationRequestToDomainModel(ReservationRequestDTO reservationRequestDTO) {
-        ReservationRequest reservationRequest = new ReservationRequest(
-                reservationRequestDTO.getNumberOfSeats(),
-                reservationRequestDTO.getSeatType(),
-                reservationRequestDTO.getConcertId(),
-                reservationRequestDTO.getDate()
+    public static CreditCard creditCardToDomainModel(CreditCardDTO creditCardDTO) {
+        CreditCard.Type type;
+        if (creditCardDTO.getType() == CreditCardDTO.Type.Visa) {
+            type = CreditCard.Type.Visa;
+        } else {
+            type = CreditCard.Type.Master;
+        }
+        CreditCard creditCard = new CreditCard(
+                type,
+                creditCardDTO.getName(),
+                creditCardDTO.getNumber(),
+                creditCardDTO.getExpiryDate()
         );
-        return reservationRequest;
+        return creditCard;
     }
 }

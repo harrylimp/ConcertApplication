@@ -46,6 +46,7 @@ public class ConcertApplication extends Application {
 
 			// Delete all existing entities of some type
 			em.createQuery("delete from Seat s").executeUpdate();
+			em.createQuery("delete from User u").executeUpdate();
 
 			TypedQuery<Concert> concertQuery =
 					em.createQuery("select c from Concert c", Concert.class);

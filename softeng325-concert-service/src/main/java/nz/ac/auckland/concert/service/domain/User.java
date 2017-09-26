@@ -4,6 +4,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import javax.persistence.*;
+import java.util.Set;
 
 @Entity
 @Table(name="USERS")
@@ -24,6 +25,16 @@ public class User {
 
     @Column(name="COOKIE_ID")
     private String _uuid;
+
+    @ElementCollection
+    @CollectionTable(
+            name="USER_CREDIT_CARDS",
+            joinColumns = @JoinColumn(name="USERNAME")
+    )
+    private Set<CreditCard> _creditCard;
+
+    @OneToMany
+    private Set<Booking> _bookings;
 
     protected User() {}
 
@@ -59,6 +70,15 @@ public class User {
     public void setUUID(String uuid) {
         _uuid = uuid;
     }
+
+    public Set<CreditCard> getCreditCard() { return _creditCard; }
+
+    public void setCreditCard(CreditCard creditCard) { _creditCard.add(creditCard); }
+
+    public Set<Booking> getBookings() { return _bookings; }
+
+    public void addBooking(Booking booking) { _bookings.add(booking); }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof User))

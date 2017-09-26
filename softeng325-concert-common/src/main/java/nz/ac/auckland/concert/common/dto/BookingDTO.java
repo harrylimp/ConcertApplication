@@ -10,6 +10,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import nz.ac.auckland.concert.common.types.PriceBand;
 
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -29,10 +31,19 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement
 public class BookingDTO {
 
+	@XmlAttribute
 	private Long _concertId;
+
+	@XmlElement
 	private String _concertTitle;
+
+	@XmlElement
 	private LocalDateTime _dateTime;
+
+	@XmlElement
 	private Set<SeatDTO> _seats;
+
+	@XmlElement
 	private PriceBand _priceBand;
 
 	public BookingDTO() {

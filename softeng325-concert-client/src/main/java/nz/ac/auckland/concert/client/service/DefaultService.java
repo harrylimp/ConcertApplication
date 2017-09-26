@@ -147,7 +147,6 @@ public class DefaultService implements ConcertService {
  @Override
 	public ReservationDTO reserveSeats(ReservationRequestDTO reservationRequest) throws ServiceException {
 
-	 // TODO Auto-generated method stub
 	 Response response = null;
 	 ReservationDTO reservationDTO = null;
 
@@ -202,18 +201,44 @@ public class DefaultService implements ConcertService {
 	 */
 	@Override
 	public void confirmReservation(ReservationDTO reservation) throws ServiceException {
-		// TODO Auto-generated method stub
 
-		// Need a way of confirming the reservation somehow?
+		Response response = null;
 
+		_client = ClientBuilder.newClient();
+		Builder builder = _client.target(WEB_SERVICE_URI + "/confirmReservation").request().accept(MediaType.APPLICATION_XML);
+		builder.cookie(Config.CLIENT_COOKIE, _cookie);
+		response = builder.put(Entity.entity(reservation, MediaType.APPLICATION_XML));
+
+		int responseCode = response.getStatus();
+		// Reservation that includes all the fields
+
+		switch(responseCode) {
+			case 400:
+				String errorMessage = response.readEntity(String.class);
+				throw new ServiceException(errorMessage);
+			case 200:
+		}
+		_client.close();
 	}
 
 	@Override
 	public void registerCreditCard(CreditCardDTO creditCard) throws ServiceException {
-		// TODO Auto-generated method stub
+		Response response = null;
 
-		// Credit card should be associated with a particular user.
-		
+        _client = ClientBuilder.newClient();
+        Builder builder = _client.target(WEB_SERVICE_URI + "/registerCreditCard").request().accept(MediaType.APPLICATION_XML);
+        builder.cookie(Config.CLIENT_COOKIE, _cookie);
+        response = builder.post(Entity.entity(creditCard, MediaType.APPLICATION_XML));
+
+        int responseCode = response.getStatus();
+        // Reservation that includes all the fields
+
+        switch(responseCode) {
+            case 400:
+                String errorMessage = response.readEntity(String.class);
+                throw new ServiceException(errorMessage);
+        }
+        _client.close();
 	}
 
 	@Override
