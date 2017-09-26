@@ -28,6 +28,9 @@ public class Seat implements Serializable {
     @Column
     private LocalDateTime _dateTime;
 
+    @Version
+    private long _version;
+
     @Column
     @Enumerated(EnumType.STRING)
     private SeatStatus _status;
@@ -57,6 +60,8 @@ public class Seat implements Serializable {
     }
 
     public LocalDateTime getDateTime() { return _dateTime; }
+
+    public long getVersion() { return _version; }
 
     public SeatStatus getStatus() { return _status; }
 
