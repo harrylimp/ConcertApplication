@@ -1,9 +1,26 @@
 package nz.ac.auckland.concert.client.service;
 
 import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import nz.ac.auckland.concert.common.dto.BookingDTO;
 import nz.ac.auckland.concert.common.dto.ConcertDTO;
 import nz.ac.auckland.concert.common.dto.CreditCardDTO;
@@ -13,6 +30,7 @@ import nz.ac.auckland.concert.common.dto.ReservationRequestDTO;
 import nz.ac.auckland.concert.common.dto.UserDTO;
 import nz.ac.auckland.concert.common.types.Config;
 
+import javax.imageio.ImageIO;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -29,6 +47,22 @@ public class DefaultService implements ConcertService {
     private static String WEB_SERVICE_URI = "http://localhost:10000/services/concerts";
 
     private String _cookie;
+
+    // AWS S3 access credentials for concert images.
+    private static final String AWS_ACCESS_KEY_ID = "AKIAIDYKYWWUZ65WGNJA";
+    private static final String AWS_SECRET_ACCESS_KEY = "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";
+
+    // Name of the S3 bucket that stores images.
+    private static final String AWS_BUCKET = "concert.aucklanduni.ac.nz";
+
+    // Download directory - a directory named "images" in the user's home
+    // directory.
+    private static final String FILE_SEPARATOR = System
+            .getProperty("file.separator");
+    private static final String USER_DIRECTORY = System
+            .getProperty("user.home");
+    private static final String DOWNLOAD_DIRECTORY = USER_DIRECTORY
+            + FILE_SEPARATOR + "images";
 
 	@Override
 	public Set<ConcertDTO> getConcerts() throws ServiceException {
@@ -95,13 +129,11 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public UserDTO authenticateUser(UserDTO user) throws ServiceException {
-		// TODO Auto-generated method stub
-        Response response = null;
         UserDTO userDTO = null;
 
         _client = ClientBuilder.newClient();
         Builder builder = _client.target(WEB_SERVICE_URI + "/authenticateUser").request().accept(MediaType.APPLICATION_XML);
-        response = builder.put(Entity.entity(user, MediaType.APPLICATION_XML));
+        Response response = builder.put(Entity.entity(user, MediaType.APPLICATION_XML));
 
         int responseCode = response.getStatus();
         switch(responseCode) {
@@ -123,8 +155,30 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public Image getImageForPerformer(PerformerDTO performer) throws ServiceException {
-		// TODO Auto-generated method stub
-		return null;
+
+        _client = ClientBuilder.newClient();
+        Builder builder = _client.target(WEB_SERVICE_URI + "/getPerformerImage").request().accept(MediaType.APPLICATION_XML);
+        Response response = builder.put(Entity.entity(performer, MediaType.APPLICATION_XML));
+
+        String imageName = response.readEntity(String.class);
+
+        // Create download directory if it doesn't already exist.
+        File downloadDirectory = new File(DOWNLOAD_DIRECTORY);
+        downloadDirectory.mkdir();
+
+        // Create an AmazonS3 object that represents a connection with the
+        // remote S3 service.
+        BasicAWSCredentials awsCredentials = new BasicAWSCredentials(
+                AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
+        AmazonS3 s3 = AmazonS3ClientBuilder
+                .standard()
+                .withRegion(Regions.AP_SOUTHEAST_2)
+                .withCredentials(
+                        new AWSStaticCredentialsProvider(awsCredentials))
+                .build();
+
+        // Download the image.
+        return download(s3, imageName);
 	}
 
  @Override
@@ -230,4 +284,24 @@ public class DefaultService implements ConcertService {
 		throw new UnsupportedOperationException();
 	}
 
+    private static Image download(AmazonS3 s3, String imageName) {
+        try {
+            S3Object o = s3.getObject(AWS_BUCKET, imageName);
+            S3ObjectInputStream s3is = o.getObjectContent();
+            BufferedImage img = new BufferedImage(400,400,BufferedImage.TYPE_INT_RGB);
+            img = ImageIO.read(s3is);
+            s3is.close();
+            return img;
+        } catch (AmazonServiceException e) {
+            System.err.println(e.getErrorMessage());
+            System.exit(1);
+        } catch (FileNotFoundException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
+        return null;
+    }
 }

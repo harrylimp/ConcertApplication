@@ -73,6 +73,22 @@ public class ConcertResource {
         return Response.ok(entity).build();
     }
 
+    @GET
+    @Path("/getPerformerImage")
+    public Response getPerformerImage(PerformerDTO performerDTO) {
+
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+
+        TypedQuery<Performer> performerQuery =
+                em.createQuery("select p from Performer p where p._id = :id", Performer.class);
+        performerQuery.setParameter("id", performerDTO.getId());
+        Performer performer = performerQuery.getSingleResult();
+
+        String imageName = performer.getImageName();
+
+        return Response.ok(imageName).build();
+    }
+
     @POST
     @Path("/createUser")
     public Response createUser(UserDTO userDTO) {
