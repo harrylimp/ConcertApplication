@@ -333,7 +333,7 @@ public class ConcertResource {
 
         Timestamp reservationTime = reservation.getTime();
         if (currentTime.getTime() > reservationTime.getTime()) {
-            // CHANGE THE SEATS BACK TO 0
+            emptyReservedSeats(reservation);
             em.close();
             throw new BadRequestException(Response
                     .status(Response.Status.BAD_REQUEST)
@@ -344,6 +344,7 @@ public class ConcertResource {
         // Need to check for credit card
         Set<CreditCard> creditCards = user.getCreditCard();
         if (creditCards.isEmpty()) {
+            emptyReservedSeats(reservation);
             em.close();
             throw new BadRequestException(Response
                     .status(Response.Status.BAD_REQUEST)
@@ -462,6 +463,26 @@ public class ConcertResource {
 
         NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, uuid);
         return Response.ok(entity).cookie(cookie).build();
+    }
+
+    private void emptyReservedSeats(Reservation reservation) {
+        EntityManager em = PersistenceManager.instance().createEntityManager();
+        em.getTransaction().begin();
+
+        Set<Seat> bookedSeats = reservation.getSeats();
+        for (Seat seat: bookedSeats) {
+            TypedQuery<Seat> seatQuery = em.createQuery("select s from Seat s where s._row = :row and s._number = :number and s._dateTime = :dateTime", Seat.class);
+            seatQuery.setParameter("row", seat.getRow());
+            seatQuery.setParameter("number", seat.getNumber());
+            seatQuery.setParameter("dateTime", seat.getDateTime());
+            Seat currentSeat = seatQuery.getSingleResult();
+
+            currentSeat.setStatus(SeatStatus.Empty);
+            em.merge(currentSeat);
+        }
+
+        em.getTransaction().commit();
+        em.close();
     }
 
     private NewCookie makeCookie(User user){
