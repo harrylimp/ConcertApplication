@@ -36,6 +36,7 @@ public class ConcertApplication extends Application {
 	public ConcertApplication() {
 		_singletons.add(new PersistenceManager());
 		_classes.add(ConcertResource.class);
+		_classes.add(SubscriptionResource.class);
 
 		EntityManager em = null;
 

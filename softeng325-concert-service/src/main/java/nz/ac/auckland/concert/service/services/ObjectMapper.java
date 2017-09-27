@@ -108,4 +108,13 @@ public class ObjectMapper {
         );
         return bookingDTO;
     }
+
+    public static NewsItemDTO newsItemToDTO(NewsItem newsItem) {
+        NewsItemDTO newsItemDTO = new NewsItemDTO(
+                newsItem.getId(),
+                newsItem.getTimetamp(),
+                newsItem.getContent()
+        );
+        return newsItemDTO;
+    }
 }

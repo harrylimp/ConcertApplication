@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,19 +18,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import nz.ac.auckland.concert.common.dto.BookingDTO;
-import nz.ac.auckland.concert.common.dto.ConcertDTO;
-import nz.ac.auckland.concert.common.dto.CreditCardDTO;
-import nz.ac.auckland.concert.common.dto.PerformerDTO;
-import nz.ac.auckland.concert.common.dto.ReservationDTO;
-import nz.ac.auckland.concert.common.dto.ReservationRequestDTO;
-import nz.ac.auckland.concert.common.dto.UserDTO;
+import nz.ac.auckland.concert.common.dto.*;
+import nz.ac.auckland.concert.common.message.Messages;
 import nz.ac.auckland.concert.common.types.Config;
+import nz.ac.auckland.concert.service.services.ConcertApplication;
 
 import javax.imageio.ImageIO;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.*;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -111,6 +107,8 @@ public class DefaultService implements ConcertService {
 			case 400:
 				String errorMessage = response.readEntity(String.class);
 				throw new ServiceException(errorMessage);
+			case 500:
+				throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
 			case 201:
 				userDTO = response.readEntity(UserDTO.class);
 
@@ -136,6 +134,8 @@ public class DefaultService implements ConcertService {
             case 400:
                 String errorMessage = response.readEntity(String.class);
                 throw new ServiceException(errorMessage);
+			case 500:
+				throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
             case 200:
                 userDTO = response.readEntity(UserDTO.class);
 
@@ -143,7 +143,6 @@ public class DefaultService implements ConcertService {
                 if(cookies.containsKey(Config.CLIENT_COOKIE)) {
                     _cookie = cookies.get(Config.CLIENT_COOKIE).getValue();
                 }
-
         }
         _client.close();
         return userDTO;
@@ -180,24 +179,24 @@ public class DefaultService implements ConcertService {
  @Override
 	public ReservationDTO reserveSeats(ReservationRequestDTO reservationRequest) throws ServiceException {
 
-	 Response response = null;
 	 ReservationDTO reservationDTO = null;
 
 	 _client = ClientBuilder.newClient();
 	 Builder builder = _client.target(WEB_SERVICE_URI + "/reservationRequest").request().accept(MediaType.APPLICATION_XML);
 	 builder.cookie(Config.CLIENT_COOKIE, _cookie);
-	 response = builder.put(Entity.entity(reservationRequest, MediaType.APPLICATION_XML));
+	 Response response = builder.put(Entity.entity(reservationRequest, MediaType.APPLICATION_XML));
 
 	 int responseCode = response.getStatus();
 	 // Reservation that includes all the fields
 
 	 switch(responseCode) {
+		 case 500:
+			 throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
 		 case 400:
 			 String errorMessage = response.readEntity(String.class);
 			 throw new ServiceException(errorMessage);
-		 case 200: // CREATED
+		 case 200:
 			 reservationDTO = response.readEntity(ReservationDTO.class);
-
 	 }
 	 _client.close();
 	 return reservationDTO;
@@ -214,6 +213,8 @@ public class DefaultService implements ConcertService {
 		int responseCode = response.getStatus();
 
 		switch(responseCode) {
+			case 500:
+				throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
 			case 400:
 				String errorMessage = response.readEntity(String.class);
 				throw new ServiceException(errorMessage);
@@ -231,6 +232,8 @@ public class DefaultService implements ConcertService {
         int responseCode = response.getStatus();
 
         switch(responseCode) {
+			case 500:
+				throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
             case 400:
                 String errorMessage = response.readEntity(String.class);
                 throw new ServiceException(errorMessage);
@@ -252,6 +255,8 @@ public class DefaultService implements ConcertService {
 			case 400:
 				String errorMessage = response.readEntity(String.class);
 				throw new ServiceException(errorMessage);
+			case 500:
+				throw new ServiceException(Messages.SERVICE_COMMUNICATION_ERROR);
 			case 200:
 				bookedSeats = response.readEntity(new GenericType<Set<BookingDTO>>(){});
 		}
@@ -261,14 +266,28 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public void subscribeForNewsItems(NewsItemListener listener) {
+		Client client = ClientBuilder.newClient();
+		final WebTarget target = client.target("/subscription/subscribe");
+		target.request()
+				.async()
+				.get(new InvocationCallback<NewsItemDTO>() {
+					public void completed(NewsItemDTO newsItemDTO) {
+						listener.newsItemReceived(newsItemDTO);
 
-		throw new UnsupportedOperationException();
-		
+						NewCookie newCookie =
+								new NewCookie(Config.CLIENT_COOKIE, newsItemDTO.getTimetamp().toString());
+						target.request().cookie(newCookie).async().get(this);
+					}
+					public void failed( Throwable t ) { }
+				});
 	}
 
 	@Override
 	public void cancelSubscription() {
-		throw new UnsupportedOperationException();
+		Client client = ClientBuilder.newClient();
+		NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, _cookie);
+		final WebTarget target = client.target("/subscription/unSubscribe");
+		target.request();
 	}
 
     private static Image download(AmazonS3 s3, String imageName) {
