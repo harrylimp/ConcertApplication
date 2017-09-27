@@ -4,10 +4,7 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,10 +14,8 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import nz.ac.auckland.concert.common.dto.BookingDTO;
 import nz.ac.auckland.concert.common.dto.ConcertDTO;
 import nz.ac.auckland.concert.common.dto.CreditCardDTO;
@@ -50,7 +45,8 @@ public class DefaultService implements ConcertService {
 
     // AWS S3 access credentials for concert images.
     private static final String AWS_ACCESS_KEY_ID = "AKIAIDYKYWWUZ65WGNJA";
-    private static final String AWS_SECRET_ACCESS_KEY = "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";
+
+	private static final String AWS_SECRET_ACCESS_KEY = "Rc29b/mJ6XA5v2XOzrlXF9ADx+9NnylH4YbEX9Yz";
 
     // Name of the S3 bucket that stores images.
     private static final String AWS_BUCKET = "concert.aucklanduni.ac.nz";
@@ -66,15 +62,15 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public Set<ConcertDTO> getConcerts() throws ServiceException {
-		Response response = null;
-        Set<ConcertDTO> concerts = null;
+		Set<ConcertDTO> concerts = null;
 		try {
 			_client = ClientBuilder.newClient();
 			Builder builder = _client.target(WEB_SERVICE_URI + "/getConcerts").request().accept(MediaType.APPLICATION_XML);
-			response = builder.get();
+			Response response = builder.get();
 
-			concerts = response.readEntity(new GenericType<Set<ConcertDTO>>(){});
-
+			if (response.getStatus() == 200) {
+				concerts = response.readEntity(new GenericType<Set<ConcertDTO>>(){});
+			}
 		} catch (Exception e) {
 		} finally {
 			_client.close();
@@ -84,17 +80,18 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public Set<PerformerDTO> getPerformers() throws ServiceException {
-        Response response = null;
         Set<PerformerDTO> performers = null;
 
         try {
             _client = ClientBuilder.newClient();
             Builder builder = _client.target(WEB_SERVICE_URI + "/getPerformers").request();
-            response = builder.get();
+            Response response = builder.get();
 
-            performers = response.readEntity(new GenericType<Set<PerformerDTO>>(){});
-        } catch (Exception e) {
-
+            if (response.getStatus() == 200) {
+				performers = response.readEntity(new GenericType<Set<PerformerDTO>>() {
+				});
+			}
+		} catch (Exception e) {
         } finally {
             _client.close();
         }
@@ -103,19 +100,18 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public UserDTO createUser(UserDTO newUser) throws ServiceException {
-		Response response = null;
 		UserDTO userDTO = null;
 
 		_client = ClientBuilder.newClient();
 		Builder builder = _client.target(WEB_SERVICE_URI + "/createUser").request().accept(MediaType.APPLICATION_XML);
-		response = builder.post(Entity.entity(newUser, MediaType.APPLICATION_XML));
+		Response response = builder.post(Entity.entity(newUser, MediaType.APPLICATION_XML));
 
 		int responseCode = response.getStatus();
 		switch(responseCode) {
 			case 400:
 				String errorMessage = response.readEntity(String.class);
 				throw new ServiceException(errorMessage);
-			case 201: // CREATED
+			case 201:
 				userDTO = response.readEntity(UserDTO.class);
 
                 Map<String, NewCookie> cookies = response.getCookies();
@@ -140,7 +136,7 @@ public class DefaultService implements ConcertService {
             case 400:
                 String errorMessage = response.readEntity(String.class);
                 throw new ServiceException(errorMessage);
-            case 200: // CREATED
+            case 200:
                 userDTO = response.readEntity(UserDTO.class);
 
                 Map<String, NewCookie> cookies = response.getCookies();
@@ -210,36 +206,29 @@ public class DefaultService implements ConcertService {
 	@Override
 	public void confirmReservation(ReservationDTO reservation) throws ServiceException {
 
-		Response response = null;
-
 		_client = ClientBuilder.newClient();
 		Builder builder = _client.target(WEB_SERVICE_URI + "/confirmReservation").request().accept(MediaType.APPLICATION_XML);
 		builder.cookie(Config.CLIENT_COOKIE, _cookie);
-		response = builder.put(Entity.entity(reservation, MediaType.APPLICATION_XML));
+		Response response = builder.put(Entity.entity(reservation, MediaType.APPLICATION_XML));
 
 		int responseCode = response.getStatus();
-		// Reservation that includes all the fields
 
 		switch(responseCode) {
 			case 400:
 				String errorMessage = response.readEntity(String.class);
 				throw new ServiceException(errorMessage);
-			case 200:
 		}
 		_client.close();
 	}
 
 	@Override
 	public void registerCreditCard(CreditCardDTO creditCard) throws ServiceException {
-		Response response = null;
-
-        _client = ClientBuilder.newClient();
+		_client = ClientBuilder.newClient();
         Builder builder = _client.target(WEB_SERVICE_URI + "/registerCreditCard").request().accept(MediaType.APPLICATION_XML);
         builder.cookie(Config.CLIENT_COOKIE, _cookie);
-        response = builder.post(Entity.entity(creditCard, MediaType.APPLICATION_XML));
+        Response response = builder.post(Entity.entity(creditCard, MediaType.APPLICATION_XML));
 
         int responseCode = response.getStatus();
-        // Reservation that includes all the fields
 
         switch(responseCode) {
             case 400:
@@ -251,12 +240,10 @@ public class DefaultService implements ConcertService {
 
 	@Override
 	public Set<BookingDTO> getBookings() throws ServiceException {
-		Response response = null;
-
 		_client = ClientBuilder.newClient();
 		Builder builder = _client.target(WEB_SERVICE_URI + "/getBookings").request().accept(MediaType.APPLICATION_XML);
 		builder.cookie(Config.CLIENT_COOKIE, _cookie);
-		response = builder.get();
+		Response response = builder.get();
 
 		int responseCode = response.getStatus();
 
@@ -288,7 +275,7 @@ public class DefaultService implements ConcertService {
         try {
             S3Object o = s3.getObject(AWS_BUCKET, imageName);
             S3ObjectInputStream s3is = o.getObjectContent();
-            BufferedImage img = new BufferedImage(400,400,BufferedImage.TYPE_INT_RGB);
+            BufferedImage img;
             img = ImageIO.read(s3is);
             s3is.close();
             return img;

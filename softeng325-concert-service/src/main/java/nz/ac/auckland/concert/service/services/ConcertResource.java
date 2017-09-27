@@ -143,29 +143,28 @@ public class ConcertResource {
             em.close();
             throw new BadRequestException(Response
                     .status(Response.Status.BAD_REQUEST)
-                    .entity(Messages.AUTHENTICATE_USER_WITH_MISSING_FIELDS) // Change message type
+                    .entity(Messages.AUTHENTICATE_USER_WITH_MISSING_FIELDS)
                     .build());
         } else {
             em.getTransaction().begin();
             ResponseBuilder response = null;
-            User user = new User(username, password); // Change this implementation into ObjectMapper later
+            User user = new User(username, password);
             User newUser = em.find(User.class, user.getUsername());
 
             if (newUser == null) {
                 em.close();
                 throw new BadRequestException(Response
                         .status(Response.Status.BAD_REQUEST)
-                        .entity(Messages.AUTHENTICATE_NON_EXISTENT_USER) // Change message type
+                        .entity(Messages.AUTHENTICATE_NON_EXISTENT_USER)
                         .build());
             } else {
                 if (!newUser.getPassword().equals(userDTO.getPassword())) {
                     em.close();
                     throw new BadRequestException(Response
                             .status(Response.Status.BAD_REQUEST)
-                            .entity(Messages.AUTHENTICATE_USER_WITH_ILLEGAL_PASSWORD) // Change message type
+                            .entity(Messages.AUTHENTICATE_USER_WITH_ILLEGAL_PASSWORD)
                             .build());
                 } else {
-                    // We need to add authentication too somehow - does persisting the User automatically do this?
                     NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, newUser.getUUID());
                     response = Response.status(200).entity(ObjectMapper.userToDTO(newUser)).cookie(cookie);
 
@@ -181,13 +180,9 @@ public class ConcertResource {
     @Path("/reservationRequest")
     public Response reservationRequest(ReservationRequestDTO reservationRequestDTO, @CookieParam("clientId") Cookie clientId) {
 
-        // Check if the datetime is relevant to the concert
-        // Check if the number of seats are available
-
         EntityManager em = PersistenceManager.instance().createEntityManager();
 
         String uuid = clientId.getValue();
-        // CAN I DO THIS?
         if (uuid == null || uuid.length() == 0) {
             em.close();
             throw new BadRequestException(Response
@@ -224,7 +219,6 @@ public class ConcertResource {
                     .build());
         }
 
-        // Making a query for the concert
         TypedQuery<Concert> concertQuery =
                 em.createQuery("select c from Concert c where c.id = :concertID ", Concert.class);
         concertQuery.setParameter("concertID", concertID);
@@ -233,7 +227,7 @@ public class ConcertResource {
         if (concert != null) {
             Boolean isDate = false;
             for (LocalDateTime date : concert.getDates()) {
-                if (date.equals(dateTime)) { // CAN WE COMPARE LIKE THIS?
+                if (date.equals(dateTime)) {
                     isDate = true;
                 }
             }
@@ -249,7 +243,6 @@ public class ConcertResource {
 
         em.getTransaction().begin();
 
-        // LOL bad query but screw it
         TypedQuery<Seat> reservedSeatsQuery =
                 em.createQuery("select s from Seat s where s._dateTime = :date and s._status in :statusList", Seat.class);
         reservedSeatsQuery.setParameter("date", dateTime);
@@ -270,7 +263,7 @@ public class ConcertResource {
             em.close();
             throw new BadRequestException(Response
                     .status(Response.Status.BAD_REQUEST)
-                    .entity(Messages.INSUFFICIENT_SEATS_AVAILABLE_FOR_RESERVATION) // Change message type
+                    .entity(Messages.INSUFFICIENT_SEATS_AVAILABLE_FOR_RESERVATION)
                     .build());
         }
 
@@ -396,7 +389,7 @@ public class ConcertResource {
         em.close();
 
         NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, uuid);
-        ResponseBuilder response = Response.ok().cookie(cookie);
+        ResponseBuilder response = Response.status(204).cookie(cookie);
 
         return response.build();
     }
@@ -436,7 +429,7 @@ public class ConcertResource {
         em.close();
 
         NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, uuid);
-        return Response.status(200).cookie(cookie).build();
+        return Response.status(204).cookie(cookie).build();
     }
 
     @GET
