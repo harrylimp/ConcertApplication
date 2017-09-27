@@ -5,8 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.security.Timestamp;
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,7 +20,6 @@ import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import nz.ac.auckland.concert.common.dto.*;
 import nz.ac.auckland.concert.common.message.Messages;
 import nz.ac.auckland.concert.common.types.Config;
-import nz.ac.auckland.concert.service.services.ConcertApplication;
 
 import javax.imageio.ImageIO;
 import javax.ws.rs.client.*;
@@ -268,15 +266,20 @@ public class DefaultService implements ConcertService {
 	public void subscribeForNewsItems(NewsItemListener listener) {
 		Client client = ClientBuilder.newClient();
 		final WebTarget target = client.target("/subscription/subscribe");
+		NewCookie userCookie = new NewCookie(Config.CLIENT_COOKIE, _cookie);
 		target.request()
+				.cookie(userCookie)
 				.async()
-				.get(new InvocationCallback<NewsItemDTO>() {
-					public void completed(NewsItemDTO newsItemDTO) {
-						listener.newsItemReceived(newsItemDTO);
-
+				.get(new InvocationCallback<List<NewsItemDTO>>() {
+					public void completed(List<NewsItemDTO> newsItemDTOs) {
+						NewsItemDTO newsItemDTOLast = null;
+						for (NewsItemDTO newsItemDTO : newsItemDTOs) {
+							listener.newsItemReceived(newsItemDTO);
+							newsItemDTOLast = newsItemDTO;
+						}
 						NewCookie newCookie =
-								new NewCookie(Config.CLIENT_COOKIE, newsItemDTO.getTimetamp().toString());
-						target.request().cookie(newCookie).async().get(this);
+								new NewCookie("newsItem", newsItemDTOLast.getTimetamp().toString());
+						target.request().cookie(userCookie).cookie(newCookie).async().get(this);
 					}
 					public void failed( Throwable t ) { }
 				});
@@ -287,7 +290,7 @@ public class DefaultService implements ConcertService {
 		Client client = ClientBuilder.newClient();
 		NewCookie cookie = new NewCookie(Config.CLIENT_COOKIE, _cookie);
 		final WebTarget target = client.target("/subscription/unSubscribe");
-		target.request();
+		target.request().cookie(cookie).get();
 	}
 
     private static Image download(AmazonS3 s3, String imageName) {
