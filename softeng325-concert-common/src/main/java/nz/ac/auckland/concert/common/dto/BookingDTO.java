@@ -48,6 +48,7 @@ public class BookingDTO {
 	public BookingDTO() {
 	}
 
+	// Adding a random comment
 	public BookingDTO(Long concertId, String concertTitle,
 			LocalDateTime dateTime, Set<SeatDTO> seats, PriceBand priceBand) {
 		_concertId = concertId;
